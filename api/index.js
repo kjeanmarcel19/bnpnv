@@ -2,8 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import fs from 'node:fs';
 
 dotenv.config();
+
+const logoBase64 = fs.readFileSync(
+  new URL('../public/logo.png', import.meta.url)
+).toString('base64');
 
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
@@ -32,8 +37,7 @@ const buildTransferEmail = ({
   const safeAmount = escapeHtml(amount);
   const safeDate = escapeHtml(executionDate);
   const safeReference = escapeHtml(reference);
-  const appUrl = process.env.PUBLIC_APP_URL || 'https://bnpp-one.vercel.app';
-  const logoUrl = `${appUrl.replace(/\/$/, '')}/logo.png`;
+  const logoCid = 'bnp-logo-confirmation@bnpp';
 
   return `
 <!doctype html>
@@ -56,7 +60,7 @@ const buildTransferEmail = ({
           </tr>
           <tr>
             <td style="padding:30px 34px 22px;text-align:center;">
-              <img src="${logoUrl}" width="190" alt="BNP Paribas" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 24px;border:0;">
+              <img src="cid:${logoCid}" width="190" alt="BNP Paribas" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 24px;border:0;">
               <div style="display:inline-block;padding:7px 13px;border-radius:999px;background:#e8f8f1;color:#087f5b;font-size:12px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;">Virement confirmé</div>
               <h1 style="margin:16px 0 8px;color:#123c32;font-size:27px;line-height:1.2;font-weight:700;">Votre virement a été enregistré</h1>
               <p style="margin:0;color:#6b7f79;font-size:14px;line-height:1.6;">Merci de conserver cet e-mail comme justificatif.</p>
@@ -211,6 +215,14 @@ app.post('/api/send-email', async (req, res) => {
     subject: `BNP Paribas - Confirmation de votre virement`,
     text: `Bonjour ${firstName} ${lastName},\n\nVotre virement de ${formattedAmount} € a bien été enregistré.`,
     html: bnpHtmlTemplate,
+    attachments: [
+      {
+        filename: 'bnp-paribas-logo.png',
+        content: logoBase64,
+        encoding: 'base64',
+        cid: 'bnp-logo-confirmation@bnpp'
+      }
+    ]
   };
 
   try {
