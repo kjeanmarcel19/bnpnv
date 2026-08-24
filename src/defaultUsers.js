@@ -7,7 +7,7 @@ export const DEFAULT_USERS = [
     prenom: "Jean",
     location: "France",
     manager: "Arnaud Leroy",
-    status: "Bloqué",
+    status: "Actif",
     lastConnection: "",
     accounts: [
       { id: "cc", type: "Compte Courant", number: "N°******2200", balance: 1000000.0, icon: "wallet" },
