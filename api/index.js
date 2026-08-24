@@ -5,6 +5,111 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const buildTransferEmail = ({
+  firstName,
+  lastName,
+  iban,
+  swift,
+  bankCode,
+  amount,
+  label,
+  executionDate,
+  reference
+}) => {
+  const safeFirstName = escapeHtml(firstName);
+  const safeLastName = escapeHtml(lastName);
+  const safeIban = escapeHtml(iban);
+  const safeSwift = escapeHtml(swift);
+  const safeBankCode = escapeHtml(bankCode);
+  const safeLabel = escapeHtml(label || 'VIREMENT');
+  const safeAmount = escapeHtml(amount);
+  const safeDate = escapeHtml(executionDate);
+  const safeReference = escapeHtml(reference);
+  const appUrl = process.env.PUBLIC_APP_URL || 'https://bnpp-one.vercel.app';
+  const logoUrl = `${appUrl.replace(/\/$/, '')}/logo.png`;
+
+  return `
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation de virement</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f7f5;font-family:Arial,Helvetica,sans-serif;color:#17352e;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    Votre virement a été enregistré avec succès. Référence ${safeReference}.
+  </div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f7f5;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(15,76,67,.10);">
+          <tr>
+            <td style="height:6px;background:#10b981;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:30px 34px 22px;text-align:center;">
+              <img src="${logoUrl}" width="190" alt="BNP Paribas" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 24px;border:0;">
+              <div style="display:inline-block;padding:7px 13px;border-radius:999px;background:#e8f8f1;color:#087f5b;font-size:12px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;">Virement confirmé</div>
+              <h1 style="margin:16px 0 8px;color:#123c32;font-size:27px;line-height:1.2;font-weight:700;">Votre virement a été enregistré</h1>
+              <p style="margin:0;color:#6b7f79;font-size:14px;line-height:1.6;">Merci de conserver cet e-mail comme justificatif.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 34px;">
+              <div style="height:1px;background:#e7efeb;"></div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:26px 34px 8px;">
+              <p style="margin:0 0 8px;color:#6b7f79;font-size:14px;">Bonjour <strong style="color:#17352e;">${safeFirstName} ${safeLastName}</strong>,</p>
+              <p style="margin:0;color:#536b64;font-size:14px;line-height:1.7;">Nous vous confirmons l’exécution de votre virement avec les informations suivantes.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 34px 12px;">
+              <div style="background:#f0fbf6;border:1px solid #ccefe0;border-radius:16px;padding:22px;text-align:center;">
+                <div style="color:#6b7f79;font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">Montant du virement</div>
+                <div style="margin-top:8px;color:#087f5b;font-size:36px;line-height:1.1;font-weight:700;">${safeAmount} €</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 34px 26px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e4ece8;border-radius:14px;overflow:hidden;">
+                <tr><td style="padding:13px 16px;background:#fbfdfc;color:#72847e;font-size:13px;width:38%;">Référence</td><td style="padding:13px 16px;background:#fbfdfc;color:#17352e;font-size:13px;font-weight:bold;text-align:right;word-break:break-all;">${safeReference}</td></tr>
+                <tr><td style="padding:13px 16px;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">Date</td><td style="padding:13px 16px;color:#17352e;font-size:13px;text-align:right;border-top:1px solid #e4ece8;">${safeDate}</td></tr>
+                <tr><td style="padding:13px 16px;background:#fbfdfc;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">Bénéficiaire</td><td style="padding:13px 16px;background:#fbfdfc;color:#17352e;font-size:13px;font-weight:bold;text-align:right;border-top:1px solid #e4ece8;">${safeFirstName} ${safeLastName}</td></tr>
+                <tr><td style="padding:13px 16px;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">IBAN</td><td style="padding:13px 16px;color:#17352e;font-size:12px;text-align:right;word-break:break-all;border-top:1px solid #e4ece8;">${safeIban}</td></tr>
+                <tr><td style="padding:13px 16px;background:#fbfdfc;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">Code SWIFT</td><td style="padding:13px 16px;background:#fbfdfc;color:#17352e;font-size:13px;text-align:right;border-top:1px solid #e4ece8;">${safeSwift}</td></tr>
+                <tr><td style="padding:13px 16px;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">Code banque</td><td style="padding:13px 16px;color:#17352e;font-size:13px;text-align:right;border-top:1px solid #e4ece8;">${safeBankCode}</td></tr>
+                <tr><td style="padding:13px 16px;background:#fbfdfc;color:#72847e;font-size:13px;border-top:1px solid #e4ece8;">Libellé</td><td style="padding:13px 16px;background:#fbfdfc;color:#17352e;font-size:13px;text-align:right;border-top:1px solid #e4ece8;">${safeLabel}</td></tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 34px;background:#123c32;text-align:center;">
+              <p style="margin:0;color:#ffffff;font-size:13px;font-weight:bold;">Espace Client</p>
+              <p style="margin:7px 0 0;color:#b9d8cc;font-size:12px;line-height:1.6;">Ne répondez pas à cet e-mail automatique.<br>Pour votre sécurité, ne communiquez jamais vos codes secrets.</p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:18px 0 0;color:#8a9b95;font-size:11px;text-align:center;">Cet e-mail est une confirmation automatique de votre opération.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -88,60 +193,17 @@ app.post('/api/send-email', async (req, res) => {
 
   const uniqueReference = `BNP${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${Date.now().toString().slice(-6)}`;
 
-  const bnpHtmlTemplate = `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333333; line-height: 1.6; background-color: #ffffff;">
-    <div style="background-color: #006643; color: #ffffff; text-align: center; padding: 35px 20px; border-radius: 4px; margin-bottom: 25px; margin-left: 10px; margin-right: 10px;">
-      <h1 style="margin: 0 0 10px 0; font-size: 26px; font-weight: bold; letter-spacing: 0.5px;">
-        Confirmation de virement
-      </h1>
-      <p style="margin: 0; font-size: 13px; color: #e0f2f1; opacity: 0.85; font-family: monospace;">
-        Référence : ${uniqueReference}
-      </p>
-    </div>
-    <div style="padding: 0 15px; margin-bottom: 25px;">
-      <p style="font-size: 16px; margin-bottom: 15px; color: #222222;">
-        Cher(e) <strong style="text-transform: uppercase;">${lastName} ${firstName}</strong> ,
-      </p>
-      <p style="font-size: 14.5px; color: #444444; margin: 0;">
-        Nous vous confirmons l'exécution de votre virement avec les détails suivants :
-      </p>
-    </div>
-    <div style="text-align: center; margin-bottom: 25px;">
-      <span style="font-size: 38px; font-weight: bold; color: #006643;">
-        ${formattedAmount} €
-      </span>
-    </div>
-    <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px 20px; margin: 0 15px 25px 15px;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 14.5px;">
-        <tr style="border-bottom: 1px solid #e9ecef;">
-          <td style="padding: 12px 0; font-weight: bold; color: #495057; width: 40%;">Date:</td>
-          <td style="padding: 12px 0; text-align: left; color: #212529; font-weight: 500;">${currentExecutionDate}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #e9ecef;">
-          <td style="padding: 12px 0; font-weight: bold; color: #495057;">IBAN:</td>
-          <td style="padding: 12px 0; text-align: left; color: #212529; font-weight: 500; letter-spacing: 0.3px;">${iban}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #e9ecef;">
-          <td style="padding: 12px 0; font-weight: bold; color: #495057;">Code SWIFT:</td>
-          <td style="padding: 12px 0; text-align: left; color: #212529; font-weight: 500;">${swift}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #e9ecef;">
-          <td style="padding: 12px 0; font-weight: bold; color: #495057;">Code Banque:</td>
-          <td style="padding: 12px 0; text-align: left; color: #212529; font-weight: 500;">${bankCode}</td>
-        </tr>
-        <tr>
-          <td style="padding: 12px 0; font-weight: bold; color: #495057;">Libellé:</td>
-          <td style="padding: 12px 0; text-align: left; color: #212529; font-weight: 500; text-transform: uppercase;">${label || 'REMBOURSEMENT'}</td>
-        </tr>
-      </table>
-    </div>
-    <div style="background-color: #004d32; color: #ffffff; text-align: center; padding: 30px 20px; border-radius: 4px; margin: 0 10px; font-size: 13px;">
-      <p style="margin: 0; opacity: 0.7; font-size: 12px;">
-        © 2026 BNP Paribas - Tous droits réservés
-      </p>
-    </div>
-  </div>
-  `;
+  const bnpHtmlTemplate = buildTransferEmail({
+    firstName,
+    lastName,
+    iban,
+    swift,
+    bankCode,
+    amount: formattedAmount,
+    label,
+    executionDate: currentExecutionDate,
+    reference: uniqueReference
+  });
 
   const mailOptions = {
     from: `"BNP Paribas" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
@@ -167,6 +229,7 @@ app.post('/api/send-email', async (req, res) => {
 });
 
 
+export { app, buildTransferEmail };
 export default app;
 
 // En local, Vercel ne lance pas automatiquement la fonction serverless.
